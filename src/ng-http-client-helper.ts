@@ -1,7 +1,7 @@
 // Based on https://github.com/DevExpress/DevExtreme.AspNet.Data/blob/experiment/ng-http-client/experiments/ng-http-client-helper.js
 
 import { Deferred } from 'devextreme/core/utils/deferred';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 
 export function sendRequestFactory(httpClient: HttpClient) {
   let nonce = Date.now();
@@ -12,16 +12,13 @@ export function sendRequestFactory(httpClient: HttpClient) {
     }
 
     function makeResponseText() {
-      const error = response.error;
-      if (error === undefined) {
-        return 'N/A';
+      const body = 'error' in response ? response.error : response.body;
+
+      if (typeof body !== 'string' || String(getResponseHeader('Content-Type')).indexOf('application/json') === 0) {
+          return JSON.stringify(body);
       }
 
-      if (typeof error !== 'string' || String(getResponseHeader('Content-Type')).indexOf('application/json') === 0) {
-        return JSON.stringify(error);
-      }
-
-      return error;
+      return body;
     }
 
     return {
