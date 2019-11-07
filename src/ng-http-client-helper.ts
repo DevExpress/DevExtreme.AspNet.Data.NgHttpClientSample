@@ -1,7 +1,7 @@
 // Based on https://github.com/DevExpress/DevExtreme.AspNet.Data/blob/experiment/ng-http-client/experiments/ng-http-client-helper.js
 
 import { Deferred } from 'devextreme/core/utils/deferred';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 
 export function sendRequestFactory(httpClient: HttpClient) {
   let nonce = Date.now();
