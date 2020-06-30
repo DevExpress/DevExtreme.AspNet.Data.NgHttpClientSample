@@ -1,9 +1,12 @@
 // Based on https://github.com/DevExpress/DevExtreme.AspNet.Data/blob/experiment/ng-http-client/experiments/ng-http-client-helper.js
 
 import { Deferred } from 'devextreme/core/utils/deferred';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 
 export function sendRequestFactory(httpClient: HttpClient) {
+  const URLENCODED = 'application/x-www-form-urlencoded';
+  const CONTENT_TYPE = 'Content-Type';
+
   let nonce = Date.now();
 
   function createXhrSurrogate(response) {
@@ -14,7 +17,7 @@ export function sendRequestFactory(httpClient: HttpClient) {
     function makeResponseText() {
       const body = 'error' in response ? response.error : response.body;
 
-      if (typeof body !== 'string' || String(getResponseHeader('Content-Type')).indexOf('application/json') === 0) {
+      if (typeof body !== 'string' || String(getResponseHeader(CONTENT_TYPE)).indexOf('application/json') === 0) {
           return JSON.stringify(body);
       }
 
@@ -53,11 +56,12 @@ export function sendRequestFactory(httpClient: HttpClient) {
     const d = Deferred();
 
     const method = (options.method || 'get').toLowerCase();
+    const isGet = method === 'get';
     const headers = { ...options.headers };
     const data = options.data;
     const xhrFields = options.xhrFields;
 
-    if (options.cache === false && method === 'get' && data) {
+    if (options.cache === false && isGet && data) {
       data._ = nonce++;
     }
 
@@ -65,12 +69,35 @@ export function sendRequestFactory(httpClient: HttpClient) {
       headers.Accept = getAcceptHeader(options);
     }
 
+    if (!isGet && !headers[CONTENT_TYPE]) {
+      headers[CONTENT_TYPE] = options.contentType || URLENCODED + ';charset=utf-8';
+    }
+
+    let params;
+    let body;
+
+    if (isGet) {
+        params = data;
+    } else {
+        if (typeof data === 'object' && headers[CONTENT_TYPE].indexOf(URLENCODED) === 0) {
+            body = new HttpParams();
+            // tslint:disable-next-line:forin
+            for (const key in data) {
+                body = body.set(key, data[key]);
+            }
+            body = body.toString();
+        } else {
+            body = data;
+        }
+    }
+
     httpClient
       .request(
         method,
         options.url,
         {
-          params: data,
+          params,
+          body,
           responseType: options.dataType,
           headers,
           withCredentials: xhrFields && xhrFields.withCredentials,
