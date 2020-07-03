@@ -59,6 +59,7 @@ export function sendRequestFactory(httpClient: HttpClient) {
     const isGet = method === 'get';
     const headers = { ...options.headers };
     const data = options.data;
+    const upload = options.upload;
     const xhrFields = options.xhrFields;
 
     if (options.cache === false && isGet && data) {
@@ -69,7 +70,7 @@ export function sendRequestFactory(httpClient: HttpClient) {
       headers.Accept = getAcceptHeader(options);
     }
 
-    if (!isGet && !headers[CONTENT_TYPE]) {
+    if (!upload && !isGet && !headers[CONTENT_TYPE]) {
       headers[CONTENT_TYPE] = options.contentType || URLENCODED + ';charset=utf-8';
     }
 
@@ -79,7 +80,7 @@ export function sendRequestFactory(httpClient: HttpClient) {
     if (isGet) {
         params = data;
     } else {
-        if (typeof data === 'object' && headers[CONTENT_TYPE].indexOf(URLENCODED) === 0) {
+        if (!upload && typeof data === 'object' && headers[CONTENT_TYPE].indexOf(URLENCODED) === 0) {
             body = new HttpParams();
             // tslint:disable-next-line:forin
             for (const key in data) {
