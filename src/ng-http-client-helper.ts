@@ -9,7 +9,7 @@ export function sendRequestFactory(httpClient: HttpClient) {
 
   let nonce = Date.now();
 
-  function createXhrSurrogate(response) {
+  function assignResponseProps(xhrSurrogate, response) {
     function getResponseHeader(name) {
       return response.headers.get(name);
     }
@@ -24,12 +24,12 @@ export function sendRequestFactory(httpClient: HttpClient) {
       return body;
     }
 
-    return {
+    Object.assign(xhrSurrogate, {
       status: response.status,
       statusText: response.statusText,
       getResponseHeader,
       responseText: makeResponseText()
-    };
+    });
   }
 
   function getAcceptHeader(options) {
@@ -60,6 +60,7 @@ export function sendRequestFactory(httpClient: HttpClient) {
     const headers = { ...options.headers };
     const data = options.data;
     const upload = options.upload;
+    const beforeSend = options.beforeSend;
     const xhrFields = options.xhrFields;
 
     if (options.cache === false && isGet && data) {
@@ -92,6 +93,12 @@ export function sendRequestFactory(httpClient: HttpClient) {
         }
     }
 
+    const xhrSurrogate = { };
+
+    if (beforeSend) {
+      beforeSend(xhrSurrogate);
+    }
+
     httpClient
       .request(
         method,
@@ -106,8 +113,8 @@ export function sendRequestFactory(httpClient: HttpClient) {
         }
       )
       .subscribe(
-        (response) => d.resolve(response.body, 'success', createXhrSurrogate(response)),
-        (response) => d.reject(createXhrSurrogate(response), 'error')
+        (response) => d.resolve(response.body, 'success', assignResponseProps(xhrSurrogate, response)),
+        (response) => d.reject(assignResponseProps(xhrSurrogate, response), 'error')
       );
 
     return d.promise();
