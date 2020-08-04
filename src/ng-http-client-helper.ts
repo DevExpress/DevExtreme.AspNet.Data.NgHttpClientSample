@@ -30,6 +30,8 @@ export function sendRequestFactory(httpClient: HttpClient) {
       getResponseHeader,
       responseText: makeResponseText()
     });
+    
+    return xhrSurrogate;
   }
 
   function getAcceptHeader(options) {
