@@ -55,7 +55,7 @@ export function sendRequestFactory(httpClient: HttpClient) {
 }
 
   return (options) => {
-    const d = Deferred();
+    const d = new Deferred();
 
     const method = (options.method || 'get').toLowerCase();
     const isGet = method === 'get';
