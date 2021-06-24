@@ -1,7 +1,7 @@
 // Based on https://github.com/DevExpress/DevExtreme.AspNet.Data/blob/experiment/ng-http-client/experiments/ng-http-client-helper.js
 
 import { Deferred } from 'devextreme/core/utils/deferred';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpEventType, HttpParams } from '@angular/common/http';
 
 export function sendRequestFactory(httpClient: HttpClient) {
   const URLENCODED = 'application/x-www-form-urlencoded';
@@ -52,7 +52,7 @@ export function sendRequestFactory(httpClient: HttpClient) {
     }
 
     return '*/*';
-}
+  }
 
   return (options) => {
     const d = Deferred();
@@ -95,13 +95,13 @@ export function sendRequestFactory(httpClient: HttpClient) {
         }
     }
 
-    const xhrSurrogate = { };
+    const xhrSurrogate:any = { };
 
     if (beforeSend) {
       beforeSend(xhrSurrogate);
     }
 
-    httpClient
+    var request = httpClient
       .request(
         method,
         options.url,
@@ -111,13 +111,32 @@ export function sendRequestFactory(httpClient: HttpClient) {
           responseType: options.dataType,
           headers,
           withCredentials: xhrFields && xhrFields.withCredentials,
-          observe: 'response'
+          observe: 'events',
+          reportProgress:true
         }
       )
       .subscribe(
-        (response) => d.resolve(response.body, 'success', assignResponseProps(xhrSurrogate, response)),
+        (response) => {
+          switch(response.type){
+            case HttpEventType.Sent:
+              upload?.onloadstart?.();
+              break;
+            case HttpEventType.UploadProgress:
+            case HttpEventType.DownloadProgress:
+              upload?.onprogress?.(response);
+              break;
+            case HttpEventType.Response:
+              d.resolve(response.body, 'success', assignResponseProps(xhrSurrogate, response));
+              upload?.onload?.();
+              break;
+          }
+        },
         (response) => d.reject(assignResponseProps(xhrSurrogate, response), 'error')
       );
+    xhrSurrogate.abort = () => {
+      request.unsubscribe();
+      upload?.onabort?.();
+    }
 
     return d.promise();
   };
